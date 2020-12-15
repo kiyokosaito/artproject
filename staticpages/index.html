@@ -1,0 +1,266 @@
+
+#提出用
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    </head>
+    <body>
+        <div id = "create-update" style ="display: none">
+            <h2>create-update</h2>
+            <table id = "createUpdateForm">
+                <tr>
+                    <td>id</td>
+                    <td><input type = "number" name= "id" id = "idInput"> </td>
+                </tr>
+                <tr>
+                    <td>title</td>
+                    <td><input type = "text" name= "title"> </td>
+                </tr>
+                <tr>
+                    <td>author</td>
+                    <td><input type = "text" name= "author"> </td>
+                </tr>
+                <tr>
+                    <td>price</td>
+                    <td><input type = "currency" name= "price"> </td>
+                </tr>
+                <tr>
+                    <td></td><td>
+                        <button id = "create-button" onclick="doCreate()">Create</button>
+                        <button id = "update-button" onclick="doUpdate()">Update</button>
+                    
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div id="display">
+            <h2>Art</h2>
+            <button onclick ="showCreate()">Create</button>
+            <table id = "arttable" class = "table">
+                <tr>
+                    <th>id</th><th>title</th><th>author</th><th>price</th><th></th><th></th>
+                </tr>
+                
+
+            </table>
+
+        </div>
+        
+        <script>
+            function showCreate(){
+                document.getElementById('display').style.display = "none"
+                document.getElementById('update-button').style.display = "none"
+                document.getElementById('create-button').style.display = "block"
+                document.getElementById('create-update').style.display = "block"
+            }
+            function showUpdate(thisElem){
+                var rowElement = thisElem.parentNode.parentNode;
+                art = readArtFromRow(rowElement)
+                populateForm(art)
+
+                document.getElementById('display').style.display = "none"
+                document.getElementById('update-button').style.display = "block"
+                document.getElementById('create-button').style.display = "none"
+                document.getElementById('create-update').style.display = "block"
+  
+            }
+
+            function readArtFromRow(rowElement){
+                art = {}
+                art.id = rowElement.getAttribute("id");
+                art.title = rowElement.cells[1].firstChild.textContent
+                art.author = rowElement.cells[2].firstChild.textContent
+                art.price = rowElement.cells[3].firstChild.textContent 
+                
+                return art
+            }
+            function populateForm(art){
+                var form = document.getElementById('createUpdateForm')
+
+                form.querySelector('input[name="id"]').value = art.id
+                form.querySelector('input[name="id"]').disabled = true
+                form.querySelector('input[name="title"]').value = art.title
+                form.querySelector('input[name="author"]').value = art.author
+                form.querySelector('input[name="price"]').value = art.price
+            
+            }
+
+            function clearForm(){
+                var form = document.getElementById('createUpdateForm')
+
+                form.querySelector('input[name="id"]').value = ''
+                form.querySelector('input[name="id"]').disabled = false
+                form.querySelector('input[name="title"]').value = ''
+                form.querySelector('input[name="author"]').value = ''
+                form.querySelector('input[name="price"]').value = ''
+            
+            }
+
+
+            function doCreate(){
+                console.log("in doCreate")
+                art = getArtFromForm()
+                $.ajax({
+                    url: "http://127.0.0.1:5000/art",
+                    data:JSON.stringify(art),
+                    dataType: "JSON",
+                    contentType:"application/json; charset=utf-8",
+                    method:"POST",
+                    success:function(result){
+                        //console.log(result)
+                        addartToTable(art)
+                        showDisplay()
+                        clearForm()
+                    },
+                    error:function(xhr,status,error){
+                        console.log("error"+error)
+                    }
+                })
+                       
+            }
+            
+            function doUpdate(){
+                art = getArtFromForm()
+                updateServer(art)
+
+            }
+
+            function updateServer(art){
+                $.ajax({
+                    url: "/art/"+art.id,
+                    data:JSON.stringify(art),
+                    dataType: "JSON",
+                    contentType:"application/json; charset=utf-8",
+                    method:"PUT",
+                    success:function(result){
+                        //console.log(result)
+                        updateTableRow(art)
+                        showDisplay()
+                        clearForm()
+                    },
+                    error:function(xhr,status,error){
+                        console.log("error"+error)
+                    }
+                })
+
+            }
+
+            function updateTableRow(art){
+                rowElement = document.getElementById(art.id)
+                rowElement.cells[1].firstCHild.textContent = art.title
+                rowElement.cells[2].firstCHild.textContent = art.author
+                rowElement.cells[3].firstCHild.textContent = art.price
+                //console.log("updating table")
+
+            }
+
+            function getArtFromForm(){
+                var form = document.getElementById('createUpdateForm')
+
+                var art = {}
+                art.id = form.querySelector('input[name="id"]').value
+                art.title = form.querySelector('input[name="title"]').value
+                art.author = form.querySelector('input[name="author"]').value
+                art.price = form.querySelector('input[name="price"]').value
+                //console.log(art)
+                return art
+            }
+
+            function showDisplay(){
+                document.getElementById('display').style.display = "none"
+                document.getElementById('create-update').style.display = "block"
+            }
+
+            function getAll(){
+                $.ajax({
+                    url: "http://127.0.0.1:5000/art",
+                    data:"",
+                    dataType: "JSON",
+                    method:"GET",
+                    success:function(results){
+                        console.log(result)
+                        for(art of results){
+                            addartToTable(art);
+                        }
+                    },
+                    error:function(xhr,status,error){
+                        console.log("error: "+status+" msg:"+error);
+                    }
+                });
+
+            }
+            
+            function populateTable(){
+                $.ajax({
+                    url: "http://127.0.0.1:5000/art",
+                    data:"",
+                    dataType: "JSON",
+                    method:"GET",
+                    success:function(results){
+                        console.log(results)
+                        for(art of results){
+                            addartToTable(art);
+                        }
+                    },
+                    error:function(xhr,status,error){
+                        console.log("error: "+status+" msg:"+error);
+                    }
+
+                })
+                    
+            }
+            
+            populateTable()
+            
+
+            function addartToTable(art){
+                //console.log("working so far")
+                tableElem = document.getElementById("arttable")
+                rowElem = tableElem.insertRow(-1)
+                rowElem.setAttribute('id', art.id)
+                cell1 = rowElem.insertCell(0)
+                cell1.innerHTML = art.id
+                cell2 = rowElem.insertCell(1)
+                cell2.innerHTML = art.title
+                cell3 = rowElem.insertCell(2)
+                cell3.innerHTML = art.author
+                cell4 = rowElem.insertCell(3)
+                cell4.innerHTML = art.price
+                cell5 = rowElem.insertCell(4)
+                cell5.innerHTML = '<button onclick = "showUpdate(this)">Update</button>'
+                cell6 = rowElem.insertCell(5)
+                cell6.innerHTML = '<button onclick = "doDelete(this)">Delete</button>'
+            }
+            
+                //populateTable()
+            
+            function doDelete(thisElem){
+                var tableElement = document.getElementById('arttable');
+                var rowElement = thisElem.parentNode.parentNode;
+                var index = rowElement.rowIndex;
+                id = rowElement.getAttribute("id");
+                $.ajax({
+                    url:"/art/"+ id,
+                    method: "DELETE",
+                    dataType :"JSON",
+                    success:function(result){
+                        tableElement.deleteRow(index);
+                    },
+                    error:function(xhr, status, error){
+                        console.log(error)
+                    }
+                })
+                tableElement.deleteRow(index);
+
+
+            }
+
+            
+
+            
+        </script>
+
+    </body>
+
+</html>
